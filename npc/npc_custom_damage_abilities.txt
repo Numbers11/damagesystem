@@ -1,0 +1,8 @@
+"npc_custom_damage_abilities"
+{
+	"abaddon_death_coil"
+	{
+		"damagetype" "fire"
+		"amplifier"	"2"
+	}
+}
