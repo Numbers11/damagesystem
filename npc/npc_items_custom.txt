@@ -1,0 +1,10 @@
+"DOTAAbilities"
+{
+
+"item_dummy_item"
+  {
+   // "ID"              "1837"
+    "AbilityBehavior"       "DOTA_ABILITY_BEHAVIOR_PASSIVE"
+    "BaseClass"           "item_datadriven"
+  }
+}
