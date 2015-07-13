@@ -1,5 +1,4 @@
---custom Resistances and Damage types 
---[[
+    --[[
 //INTRODUCTION//
 The goal of this library is to provide an easy to use way to implement different damage types and resistances against them,
 without or at least wth a minimum use of modifiers / custom damage events hassle.
@@ -141,9 +140,9 @@ ApplyCustomDamage(target, caster, 100, DAMAGE_TYPE_PURE, "fire")
 
 
 if DamageSystem == nil then
-	print ( '[DamageSystem] creating DamageSystem' )
-	DamageSystem = {}
-	DamageSystem.__index = DamageSystem
+    print ( '[DamageSystem] creating DamageSystem' )
+    DamageSystem = {}
+    DamageSystem.__index = DamageSystem
     DamageSystem.kv_abilities = LoadKeyValues("scripts/npc/npc_custom_damage_abilities.txt")
     DamageSystem.kv_units     = LoadKeyValues("scripts/npc/npc_custom_damage_units.txt")
 
@@ -160,37 +159,34 @@ function DamageSystem:DamageFilter( event )
     if event.entindex_inflictor_const then --if there is no inflictor key then it was an auto attack
         ability = EntIndexToHScript(event.entindex_inflictor_const)
     end
-	print( '********damage event************' )
+    print( '********damage event************' )
     for k, v in pairs(event) do
-    	print("DamageFilter: ",k, " ==> ", v)
+        print("DamageFilter: ",k, " ==> ", v)
     end
-    if event.entindex_inflictor_const == DamageSystem.handle then --has already been parsed, you are good to go.
-        print('this damage is fine')
-        return true 
-    else 
-        if not DamageSystem:CreateAbility(ability) then --this means we have no kv values for this ability
-            return true
-        end
-        print('DamageFilter: attack ability type:')
-        print(ability:GetCustomDamageType(), '  - ', ability:GetCustomDamageModifier())
-        print('DamageFilter: victim resistances:')
-        for k,v in pairs(victim.resistances) do print(k,v) end
-        local newdamage = event.damage * tonumber(ability:GetCustomDamageModifier())
-        newdamage = newdamage - newdamage / 100 *  tonumber(victim:GetResistance(ability:GetCustomDamageType()))
-        if newdamage < 0 then
-            return false
-        end
-        local damageTable = {
-            victim = victim,
-            attacker = attacker,
-            damage = newdamage,
-            damage_type = DAMAGE_TYPE_PURE  ,
-            ability = EntIndexToHScript(DamageSystem.handle)
-        }
-        print('DamageFilter: Dealing damage ', newdamage)
-        ApplyDamage(damageTable)
-        return false 
+
+    if DamageSystem.handle == event.entindex_inflictor_const then --damage directly dealt with ApplyCustomDamage
+       print('DamageFilter: Directly dealt from script')
+       return true 
     end
+
+    if not DamageSystem:CreateAbility(ability) then --this means we have no kv values for this ability
+        print('DamageFilter: Couldnt find this ability')
+        return true
+    end
+    
+    print('DamageFilter: attack ability type:')
+    print('>', ability:GetCustomDamageType(), '  - ', ability:GetCustomDamageModifier())
+    print('DamageFilter: victim resistances:')
+    for k,v in pairs(victim.resistances) do print('>', k,v) end
+    local newdamage = event.damage * tonumber(ability:GetCustomDamageModifier())
+    newdamage = newdamage - newdamage / 100 *  tonumber(victim:GetResistance(ability:GetCustomDamageType()))
+    if newdamage <= 0 then
+        print('DamageFilter: Damage is 0')
+        return false
+    end
+    print('DamageFilter: Dealing damage ', newdamage)
+    event.damage = newdamage
+    return true 
 end
 
 function DamageSystem:CreateAbility(ability)
@@ -294,6 +290,7 @@ end
 function ApplyCustomDamage(victim, attacker, damage, damagetype, customdamagetype)
     --print('DamageFilter: victim resistances:')
     --for k,v in pairs(victim.resistances) do print(k,v) end
+    --EntIndexToHScript(DamageSystem.handle)
     local newdamage = damage - damage / 100 *  tonumber(victim:GetResistance(customdamagetype))
     local damageTable = {
         victim = victim,
@@ -306,14 +303,14 @@ function ApplyCustomDamage(victim, attacker, damage, damagetype, customdamagetyp
     ApplyDamage(damageTable)   
 end
 
---add/substrat resistance function to use with modifiers
+--add/substract resistance function to use with modifiers
 function AddResistance(event)
     --for k, v in pairs(event) do
     --    print("AddResistance: ",k, " ==> ", v)
     --end
     local unit = event.target--= event.unit
     if unit.resistances then
-        print('[DamageSystem] changing ', event.resistance, ' ', unit:GetResistance(event.resistance), ' ==> ', unit:GetResistance(event.resistance) + event.value)
+        print('[DamageSystem] changing ', event.resistance, ' | ', unit:GetResistance(event.resistance), ' ==> ', unit:GetResistance(event.resistance) + event.value)
         unit:AddResistance(event.resistance, event.value)
     end
 end
